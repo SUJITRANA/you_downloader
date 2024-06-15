@@ -56,12 +56,14 @@ def index():
             if not stream:
                 return jsonify({'error': 'Selected quality is not available.'}), 400
 
-            # Generate the filename
-            filename = yt.title + '.mp4'
+            # Generate the filename without special characters
+            safe_filename = yt.title.replace('/', '_').replace('\\', '_') + '.mp4'
+            
             # Download the file to the server
-            stream.download(output_path=downloads_path, filename=filename)
+            stream.download(output_path=downloads_path, filename=safe_filename)
+
             # Return a response to redirect the user to the download route
-            return jsonify({'message': 'Download ready', 'filename': filename}), 200
+            return jsonify({'message': 'Download ready', 'filename': safe_filename}), 200
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     return render_template('index.html', form=form)
