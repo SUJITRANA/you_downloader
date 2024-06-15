@@ -6,3 +6,4 @@ pytube
 flask-socketio
 eventlet
 gunicorn
+boto3
