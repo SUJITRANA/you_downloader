@@ -1,9 +1,8 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField
 from wtforms.validators import DataRequired, URL
 from pytube import YouTube
-import boto3
 import os
 from flask_socketio import SocketIO, emit
 import eventlet
@@ -14,14 +13,12 @@ eventlet.monkey_patch()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 
-# AWS S3 configuration
-s3 = boto3.client(
-    's3',
-    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-    region_name=os.getenv('AWS_REGION')
-)
-bucket_name = os.getenv('AWS_S3_BUCKET_NAME')
+# Use the user's Downloads directory
+home_directory = os.path.expanduser('~')
+downloads_path = os.path.join(home_directory, 'Downloads')
+
+if not os.path.exists(downloads_path):
+    os.makedirs(downloads_path)
 
 socketio = SocketIO(app, async_mode='eventlet')
 
@@ -60,17 +57,17 @@ def index():
             if not stream:
                 return jsonify({'error': 'Selected quality is not available.'}), 400
 
-            # Download to memory and then upload to S3
+            # Download to memory
             stream_data = BytesIO()
             stream.stream_to_buffer(stream_data)
             stream_data.seek(0)
 
-            file_key = yt.title + '.mp4'
-            s3.upload_fileobj(stream_data, bucket_name, file_key)
-
-            file_url = f"https://{bucket_name}.s3.amazonaws.com/{file_key}"
-
-            return jsonify({'message': f'Download completed: {yt.title}', 'file_url': file_url}), 200
+            return send_file(
+                stream_data, 
+                as_attachment=True, 
+                download_name=f"{yt.title}.mp4",
+                mimetype="video/mp4"
+            )
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     return render_template('index.html', form=form)
