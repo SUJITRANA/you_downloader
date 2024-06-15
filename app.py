@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField
@@ -5,10 +8,7 @@ from wtforms.validators import DataRequired, URL
 from pytube import YouTube
 import os
 from flask_socketio import SocketIO, emit
-import eventlet
 from io import BytesIO
-
-eventlet.monkey_patch()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
