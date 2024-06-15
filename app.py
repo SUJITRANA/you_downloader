@@ -40,6 +40,11 @@ def progress_function(stream, chunk, bytes_remaining):
     percentage = (bytes_downloaded / total_size) * 100
     socketio.emit('progress', {'progress': percentage}, namespace='/')
 
+@app.route('/download/<filename>')
+def download_file(filename):
+    return send_from_directory(downloads_path, filename, as_attachment=True)
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = DownloadForm()
@@ -60,8 +65,10 @@ def index():
                 return jsonify({'error': 'Selected quality is not available.'}), 400
 
             download_path = os.path.join(downloads_path, yt.title + '.mp4')
+            # After the file is downloaded on the server
             stream.download(output_path=downloads_path)
-            return jsonify({'message': f'Download completed: {yt.title}', 'filepath': download_path}), 200
+            # Redirect or prompt the user to download the file to their local machine
+            return jsonify({'message': f'Download completed: {yt.title}', 'filepath': url_for('download_file', filename=yt.title + '.mp4')}), 200
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     return render_template('index.html', form=form)
