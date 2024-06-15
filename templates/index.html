@@ -103,6 +103,7 @@
                 </div>
                 <div class="modal-body">
                     <p>Download completed successfully.</p>
+                    <div id="downloadLinkContainer"></div> <!-- Container for download link -->
                 </div>
             </div>
         </div>
@@ -152,7 +153,8 @@
                     data: formData,
                     success: function(response) {
                         $('#messages').html('<div class="alert alert-success">' + response.message + '</div>');
-                        $('#downloadLink').attr('href', response.filepath);
+                        var downloadLink = $('<a href="/download/' + response.filename + '" class="btn btn-primary" download>Click here to download</a>');
+                        $('#downloadLinkContainer').html(downloadLink); // Replace content
                         $('#saveModal').modal('show');
                     },
                     error: function(response) {
