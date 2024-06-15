@@ -103,7 +103,6 @@
                 </div>
                 <div class="modal-body">
                     <p>Download completed successfully.</p>
-                    <a id="downloadLink" href="#" class="btn btn-primary">Open Downloaded File</a>
                 </div>
             </div>
         </div>
@@ -152,19 +151,9 @@
                     type: 'POST',
                     data: formData,
                     success: function(response) {
-                        console.log(response); // Log the response to debug
-                        if (response.message) {
-                            $('#messages').html('<div class="alert alert-success">' + response.message + '</div>');
-                        } else {
-                            $('#messages').html('<div class="alert alert-success">Download completed successfully.</div>');
-                        }
-                        
-                        if (response.filepath) {
-                            $('#downloadLink').attr('href', response.filepath);
-                            $('#saveModal').modal('show');
-                        } else {
-                            console.error('Filepath is not defined in the response.');
-                        }
+                        $('#messages').html('<div class="alert alert-success">' + response.message + '</div>');
+                        $('#downloadLink').attr('href', response.filepath);
+                        $('#saveModal').modal('show');
                     },
                     error: function(response) {
                         $('#messages').html('<div class="alert alert-danger">' + response.responseJSON.error + '</div>');
