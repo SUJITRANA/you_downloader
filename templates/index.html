@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -153,9 +152,19 @@
                     type: 'POST',
                     data: formData,
                     success: function(response) {
-                        $('#messages').html('<div class="alert alert-success">' + response.message + '</div>');
-                        $('#downloadLink').attr('href', response.filepath);
-                        $('#saveModal').modal('show');
+                        console.log(response); // Log the response to debug
+                        if (response.message) {
+                            $('#messages').html('<div class="alert alert-success">' + response.message + '</div>');
+                        } else {
+                            $('#messages').html('<div class="alert alert-success">Download completed successfully.</div>');
+                        }
+                        
+                        if (response.filepath) {
+                            $('#downloadLink').attr('href', response.filepath);
+                            $('#saveModal').modal('show');
+                        } else {
+                            console.error('Filepath is not defined in the response.');
+                        }
                     },
                     error: function(response) {
                         $('#messages').html('<div class="alert alert-danger">' + response.responseJSON.error + '</div>');
