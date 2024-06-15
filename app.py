@@ -1,14 +1,13 @@
-import eventlet
-eventlet.monkey_patch()
-
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField
 from wtforms.validators import DataRequired, URL
 from pytube import YouTube
 import os
-from io import BytesIO
 from flask_socketio import SocketIO, emit
+import eventlet
+
+eventlet.monkey_patch()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -57,17 +56,9 @@ def index():
             if not stream:
                 return jsonify({'error': 'Selected quality is not available.'}), 400
 
-            # Download to memory
-            stream_data = BytesIO()
-            stream.stream_to_buffer(stream_data)
-            stream_data.seek(0)
-
-            return send_file(
-                stream_data, 
-                as_attachment=True, 
-                download_name=f"{yt.title}.mp4",
-                mimetype="video/mp4"
-            )
+            download_path = os.path.join(downloads_path, yt.title + '.mp4')
+            stream.download(output_path=downloads_path)
+            return jsonify({'message': f'Download completed: {yt.title}', 'filepath': download_path}), 200
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     return render_template('index.html', form=form)
