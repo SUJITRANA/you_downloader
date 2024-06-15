@@ -64,4 +64,4 @@ def index():
     return render_template('index.html', form=form)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, use_reloader=False)
+    socketio.run(app)
