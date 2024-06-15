@@ -3,21 +3,25 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField
 from wtforms.validators import DataRequired, URL
 from pytube import YouTube
+import boto3
 import os
 from flask_socketio import SocketIO, emit
 import eventlet
+from io import BytesIO
 
 eventlet.monkey_patch()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 
-# Use the user's Downloads directory
-home_directory = os.path.expanduser('~')
-downloads_path = os.path.join(home_directory, 'Downloads')
-
-if not os.path.exists(downloads_path):
-    os.makedirs(downloads_path)
+# AWS S3 configuration
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+    region_name=os.getenv('AWS_REGION')
+)
+bucket_name = os.getenv('AWS_S3_BUCKET_NAME')
 
 socketio = SocketIO(app, async_mode='eventlet')
 
@@ -56,13 +60,18 @@ def index():
             if not stream:
                 return jsonify({'error': 'Selected quality is not available.'}), 400
 
-            download_path = os.path.join(downloads_path, yt.title + '.mp4')
-            print(f"Downloading to: {download_path}")  # Debug print statement
-            stream.download(output_path=downloads_path)
-            print(f"Download completed: {yt.title}")  # Debug print statement
-            return jsonify({'message': f'Download completed: {yt.title}', 'filepath': download_path}), 200
+            # Download to memory and then upload to S3
+            stream_data = BytesIO()
+            stream.stream_to_buffer(stream_data)
+            stream_data.seek(0)
+
+            file_key = yt.title + '.mp4'
+            s3.upload_fileobj(stream_data, bucket_name, file_key)
+
+            file_url = f"https://{bucket_name}.s3.amazonaws.com/{file_key}"
+
+            return jsonify({'message': f'Download completed: {yt.title}', 'file_url': file_url}), 200
         except Exception as e:
-            print(f"Error: {str(e)}")  # Debug print statement
             return jsonify({'error': str(e)}), 500
     return render_template('index.html', form=form)
 
