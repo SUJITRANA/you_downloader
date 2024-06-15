@@ -57,9 +57,12 @@ def index():
                 return jsonify({'error': 'Selected quality is not available.'}), 400
 
             download_path = os.path.join(downloads_path, yt.title + '.mp4')
+            print(f"Downloading to: {download_path}")  # Debug print statement
             stream.download(output_path=downloads_path)
+            print(f"Download completed: {yt.title}")  # Debug print statement
             return jsonify({'message': f'Download completed: {yt.title}', 'filepath': download_path}), 200
         except Exception as e:
+            print(f"Error: {str(e)}")  # Debug print statement
             return jsonify({'error': str(e)}), 500
     return render_template('index.html', form=form)
 
