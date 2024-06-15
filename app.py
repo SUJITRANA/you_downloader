@@ -1,6 +1,4 @@
-from flask import url_for
-from flask import send_from_directory
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory, url_for
 from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField
 from wtforms.validators import DataRequired, URL
@@ -39,14 +37,6 @@ def progress_function(stream, chunk, bytes_remaining):
     percentage = (bytes_downloaded / total_size) * 100
     socketio.emit('progress', {'progress': percentage}, namespace='/')
 
-@app.route('/download/<filename>')
-def download_file(filename):
-    return send_from_directory(downloads_path, filename, as_attachment=True)
-
-@app.route('/downloads/<path:filename>')
-def download(filename):
-    return send_from_directory(directory=downloads_path, filename=filename, as_attachment=True)
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = DownloadForm()
@@ -66,16 +56,19 @@ def index():
             if not stream:
                 return jsonify({'error': 'Selected quality is not available.'}), 400
 
-            download_path = os.path.join(downloads_path, yt.title + '.mp4')
-            # After the file is downloaded on the server
-            stream.download(output_path=downloads_path)
             # Generate the filename
             filename = yt.title + '.mp4'
-            # Redirect or prompt the user to download the file to their local machine
-            return jsonify({'message': 'Download ready', 'download_url': url_for('download', filename=filename)}), 200
+            # Download the file to the server
+            stream.download(output_path=downloads_path, filename=filename)
+            # Return a response to redirect the user to the download route
+            return jsonify({'message': 'Download ready', 'download_url': url_for('download_file', filename=filename)}), 200
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     return render_template('index.html', form=form)
+
+@app.route('/downloads/<filename>')
+def download_file(filename):
+    return send_from_directory(directory=downloads_path, filename=filename, as_attachment=True)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
